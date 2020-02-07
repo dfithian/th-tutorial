@@ -8,3 +8,7 @@ inspiration.
 ```bash
 stack install markdown-unlit
 ```
+
+## Exercises
+
+Start in the `exercises/src` folder.
