@@ -1,0 +1,3 @@
+:set prompt "λ → "
+:set prompt-cont "λ ‖ "
+:set -pgmL markdown-unlit

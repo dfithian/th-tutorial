@@ -1,0 +1,33 @@
+name: th-workshop
+version: '0.1'
+maintainer: Dan Fithian
+license: AllRightsReserved
+copyright: 2020 Dan Fithian
+default-extensions:
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - QuasiQuotes
+  - TemplateHaskell
+
+dependencies:
+  - aeson
+  - base
+  - classy-prelude
+  - template-haskell
+
+library:
+  source-dirs:
+    - src
+  ghc-options:
+    - -Wall
+    - -Werror
+    - -fwarn-tabs
+    - -pgmL markdown-unlit
+
+tests:
+  tests:
+    source-dirs: test
+    main: Spec.hs
+    dependencies:
+      - QuickCheck
+      - hspec
