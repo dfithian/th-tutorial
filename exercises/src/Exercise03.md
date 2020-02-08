@@ -133,3 +133,12 @@ deriveEnumInstances tyName = do
         prettyShow = $(deployConstructors (stringE . trimAndLower tyName) conNames)
     |]
 ```
+
+We can look at what we did and see if it's reasonable.
+
+```bash
+stack ghci
+:set -ddump-splices
+import Language.Haskell.TH
+$(stringE . show =<< deriveEnumInstances ''Pet) :: String
+```
