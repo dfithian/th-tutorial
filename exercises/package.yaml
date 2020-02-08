@@ -4,16 +4,21 @@ maintainer: Dan Fithian
 license: AllRightsReserved
 copyright: 2020 Dan Fithian
 default-extensions:
+  - LambdaCase
   - NoImplicitPrelude
   - OverloadedStrings
   - QuasiQuotes
+  - ScopedTypeVariables
   - TemplateHaskell
 
 dependencies:
   - aeson
   - base
   - classy-prelude
+  - hspec
+  - QuickCheck
   - template-haskell
+  - text
 
 library:
   source-dirs:
@@ -23,11 +28,3 @@ library:
     - -Werror
     - -fwarn-tabs
     - -pgmL markdown-unlit
-
-tests:
-  tests:
-    source-dirs: test
-    main: Spec.hs
-    dependencies:
-      - QuickCheck
-      - hspec

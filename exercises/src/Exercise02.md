@@ -46,3 +46,12 @@ $(stringE . show =<< helloWorldD') :: String
 ```
 
 And now we have a debugging utility.
+
+Other notes:
+
+* you can mix QuasiQuotes and splices together
+* lowercase TH function and uppercase TH constructor similarities/differences
+    * `Q [Dec]` vs `DecsQ`
+* constructors/functions always end with the first letter of their type
+    * `varE` is `Exp` but `varT` is `Type` etc
+
