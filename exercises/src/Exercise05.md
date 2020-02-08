@@ -2,10 +2,10 @@
 module Exercise05 where
 
 import ClassyPrelude
-import qualified Data.Aeson as A
-import qualified Test.Hspec as H
-import qualified Test.Hspec.QuickCheck as HQ
-import qualified Test.QuickCheck as Q
+import Data.Aeson (decode, encode)
+import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy)
+import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (Arbitrary, arbitrary, elements)
 
 import Exercise03
 ```
@@ -31,16 +31,16 @@ data Incorrect
 deriveEnumInstances ''Fantastic
 -- deriveEnumInstances ''Incorrect -- should fail
 
-instance Q.Arbitrary Fantastic where
-  arbitrary = Q.elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
+instance Arbitrary Fantastic where
+  arbitrary = elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
 
-thEnumSpec :: H.Spec
-thEnumSpec = H.describe "TH Enums" $ do
-  HQ.prop "always round trips JSON instances" $ \ (x :: Fantastic) ->
-    A.decode (A.encode x) `H.shouldBe` Just x
+thEnumSpec :: Spec
+thEnumSpec = describe "TH Enums" $ do
+  prop "always round trips JSON instances" $ \ (x :: Fantastic) ->
+    decode (encode x) `shouldBe` Just x
 
-  HQ.prop "always encodes to something we expect" $ \ (x :: Fantastic) ->
-    A.encode x `H.shouldSatisfy` flip elem ["\"mrFox\"", "\"beasts\"", "\"fantasia\""]
+  prop "always encodes to something we expect" $ \ (x :: Fantastic) ->
+    encode x `shouldSatisfy` flip elem ["\"mrFox\"", "\"beasts\"", "\"fantasia\""]
 ```
 
 Now to test.

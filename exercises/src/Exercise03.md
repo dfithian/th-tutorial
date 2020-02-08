@@ -1,10 +1,9 @@
 ```haskell
 module Exercise03 where
 
-import ClassyPrelude
-import qualified Data.Aeson as A
-import qualified Data.Char as C
-import qualified Data.Text as T
+import ClassyPrelude hiding (stripPrefix)
+import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
+import Data.Text (stripPrefix)
 import Language.Haskell.TH
 ```
 
@@ -25,13 +24,13 @@ This is a pattern that I find very common: some enumeration, with constructors p
 ambiguity (due to Haskell's namespacing woes). Inevitably someone will want JSON instances.
 
 ```haskell
-instance A.ToJSON Pet where
+instance ToJSON Pet where
   toJSON = \ case
-    PetDog -> A.String "dog"
-    PetCat -> A.String "cat"
-    PetTeddyBear -> A.String "teddyBear"
-instance A.FromJSON Pet where
-  parseJSON = A.withText "Pet" $ \ case
+    PetDog -> String "dog"
+    PetCat -> String "cat"
+    PetTeddyBear -> String "teddyBear"
+instance FromJSON Pet where
+  parseJSON = withText "Pet" $ \ case
     "dog" -> pure PetDog
     "cat" -> pure PetCat
     "teddyBear" -> pure PetTeddyBear
@@ -67,10 +66,10 @@ trimAndLowerTH :: Name -> Name -> Q String
 trimAndLowerTH tyName conName =
   let tyStr = show tyName
       conStr = show conName
-  in case T.stripPrefix (pack tyStr) (pack conStr) of
+  in case stripPrefix (pack tyStr) (pack conStr) of
     Nothing -> fail $ tyStr <> " not a prefix of " <> conStr
     Just suffix -> case unpack suffix of
-      c:cs -> pure $ (C.toLower c):cs
+      c:cs -> pure $ (charToLower c):cs
       _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
 ```
 
@@ -115,14 +114,14 @@ We can put it together:
 deriveEnumInstances :: Name -> Q [Dec]
 deriveEnumInstances tyName = do
   conNames <- extractConstructors tyName
-  [d| instance A.ToJSON $(conT tyName) where
+  [d| instance ToJSON $(conT tyName) where
         toJSON =
           $(deployConstructors
-              (\ conName -> [| A.String $(stringE =<< trimAndLowerTH tyName conName) |])
+              (\ conName -> [| String $(stringE =<< trimAndLowerTH tyName conName) |])
               conNames
            )
-      instance A.FromJSON $(conT tyName) where
-        parseJSON = A.withText $(stringE (show tyName))
+      instance FromJSON $(conT tyName) where
+        parseJSON = withText $(stringE (show tyName))
           $(deployValues
               (\ conName -> [| pure $(conE conName) |])
               (\ other -> [| fail $ "unknown " <> $(stringE (show tyName)) <> " type " <> show $(varE other) |])
