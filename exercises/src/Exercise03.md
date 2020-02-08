@@ -59,21 +59,19 @@ Where all this is leading should be pretty obvious: the point is that we want to
 enumerations. Eventually, we'll want a function `deriveEnumInstances :: Name -> Q [Dec]` that will generate these
 instances for us. On the way, we need to define a few helper functions.
 
-First, we need a way of trimming a `Show` instance and lowercasing the first letter. Since we're in Template Haskell
-land, we must use `String`, though we can convert to `Text`.
+First, we need a way of trimming a type and lowercasing the first letter in each constructor. Since we're in Template
+Haskell land, we must use `String`, though we can convert to `Text`.
 
 ```haskell
-trimAndLower :: Name -> Name -> String
-trimAndLower tyName conName =
+trimAndLowerTH :: Name -> Name -> Q String
+trimAndLowerTH tyName conName =
   let tyStr = show tyName
       conStr = show conName
   in case T.stripPrefix (pack tyStr) (pack conStr) of
-    Nothing -> case conStr of
-      c:cs -> (C.toLower c):cs
-      "" -> ""
+    Nothing -> fail $ tyStr <> " not a prefix of " <> conStr
     Just suffix -> case unpack suffix of
-      c:cs -> (C.toLower c):cs
-      "" -> ""
+      c:cs -> pure $ (C.toLower c):cs
+      _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
 ```
 
 Next we need a way to extract constructors from a type in Template Haskell. Since we're in the `Q` monad, a call to
@@ -103,8 +101,9 @@ deployConstructors effect conNames =
 
 deployValues :: (Name -> Q Exp) -> (Name -> Q Exp) -> Name -> [Name] -> Q Exp
 deployValues effect fallback tyName conNames = do
-  let happyPath = map $ \ conName ->
-        match (litP (stringL (trimAndLower tyName conName))) (normalB $ effect conName) []
+  let happyPath = map $ \ conName -> do
+        trimmed <- trimAndLowerTH tyName conName
+        match (litP (stringL trimmed)) (normalB $ effect conName) []
       sadPath x = match (varP x) (normalB (fallback x)) []
   otherName <- newName "other"
   lamCaseE (happyPath conNames <> [sadPath otherName])
@@ -119,7 +118,7 @@ deriveEnumInstances tyName = do
   [d| instance A.ToJSON $(conT tyName) where
         toJSON =
           $(deployConstructors
-              (\ conName -> [| A.String $(stringE (trimAndLower tyName conName)) |])
+              (\ conName -> [| A.String $(stringE =<< trimAndLowerTH tyName conName) |])
               conNames
            )
       instance A.FromJSON $(conT tyName) where
@@ -130,7 +129,7 @@ deriveEnumInstances tyName = do
               tyName conNames
            )
       instance PrettyShow $(conT tyName) where
-        prettyShow = $(deployConstructors (stringE . trimAndLower tyName) conNames)
+        prettyShow = $(deployConstructors (stringE <=< trimAndLowerTH tyName) conNames)
     |]
 ```
 

@@ -24,7 +24,12 @@ data Fantastic
   | FantasticFantasia
   deriving (Eq, Show)
 
+data Incorrect
+  = Correct
+  deriving (Eq, Show)
+
 deriveEnumInstances ''Fantastic
+-- deriveEnumInstances ''Incorrect -- should fail
 
 instance Q.Arbitrary Fantastic where
   arbitrary = Q.elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
