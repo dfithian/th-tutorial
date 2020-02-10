@@ -29,7 +29,11 @@ data Incorrect
   deriving (Eq, Show)
 
 deriveEnumInstances ''Fantastic
--- deriveEnumInstances ''Incorrect -- should fail
+
+-- Should fail because the prefix is wrong. Can't figure out a way to run a macro down in `Q [Dec]` because `runQ` on
+-- something that `fail`s will always fail before you can catch it. In any rate, you could also test this by putting
+-- it in a separate project or file, compiling it independently, and grepping for compilation errors.
+-- deriveEnumInstances ''Incorrect
 
 instance Arbitrary Fantastic where
   arbitrary = elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
