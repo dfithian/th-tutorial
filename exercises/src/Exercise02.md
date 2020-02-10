@@ -49,9 +49,14 @@ And now we have a debugging utility.
 
 Other notes:
 
-* you can mix QuasiQuotes and splices together
-* lowercase TH function and uppercase TH constructor similarities/differences
-    * `Q [Dec]` vs `DecsQ`
-* constructors/functions always end with the first letter of their type
-    * `varE` is `Exp` but `varT` is `Type` etc
+* You can mix QuasiQuotes and splices together: `[| $(StringL "foo") :: String |]` and `$(sigE (StringL "foo") [t|
+  String |])` are both valid.
+* Lowercase TH functions and uppercase TH constructors are related.
+    * `varP :: Name -> PatQ`
+    * `type PatQ = Q Pat`
+    * `data Pat = ... | VarP Name | ...`
+* Constructors and functions always end with the first letter of their type.
+    * `varE :: Name -> ExpQ`
+    * `varT :: Name -> TypeQ`
+    * `varP :: Name -> PatQ`
 

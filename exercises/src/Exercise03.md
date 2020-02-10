@@ -3,7 +3,7 @@ module Exercise03 where
 
 import ClassyPrelude hiding (stripPrefix)
 import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
-import Data.Text (stripPrefix)
+import Data.List (stripPrefix)
 import Language.Haskell.TH
 ```
 
@@ -58,17 +58,17 @@ Where all this is leading should be pretty obvious: the point is that we want to
 enumerations. Eventually, we'll want a function `deriveEnumInstances :: Name -> Q [Dec]` that will generate these
 instances for us. On the way, we need to define a few helper functions.
 
-First, we need a way of trimming a type and lowercasing the first letter in each constructor. Since we're in Template
-Haskell land, we must use `String`, though we can convert to `Text`.
+First, we need a way of trimming a type and lowercasing the first letter in each constructor.
 
 ```haskell
+-- |Trim and lower a string by removing its prefix.
 trimAndLowerTH :: Name -> Name -> Q String
 trimAndLowerTH tyName conName =
   let tyStr = show tyName
       conStr = show conName
-  in case stripPrefix (pack tyStr) (pack conStr) of
+  in case stripPrefix tyStr conStr of
     Nothing -> fail $ tyStr <> " not a prefix of " <> conStr
-    Just suffix -> case unpack suffix of
+    Just suffix -> case suffix of
       c:cs -> pure $ (charToLower c):cs
       _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
 ```
@@ -79,12 +79,14 @@ value, class, you name it. What we're looking for in our case is a `data` type w
 any extra arguments.
 
 ```haskell
+-- |Extract the constructors.
+-- Fill in the pattern match statement.
 extractConstructors :: Name -> Q [Name]
 extractConstructors tyName = do
   info <- reify tyName
   case info of
-    TyConI (DataD _cxt _name _tyVarBndrs_ _kindMay constructors _derivClauses) -> for constructors $ \ case
-      NormalC conName [] -> pure conName
+    TyConI (DataD _cxt _name _tyVarBndrs_ _kindMay constructors _derivClauses) -> for constructors $ \ case -- TODO fill this in
+      NormalC conName [] -> pure conName -- TODO fill this in
       other -> fail $ "type " <> show tyName <> " had a nontrivial constructor: " <> show other
     other -> fail $ "type " <> show tyName <> " was not defined with `data`: " <> show other
 ```
@@ -92,51 +94,58 @@ extractConstructors tyName = do
 Then we need a way to iterate over the list of constructors and strings as the body of a `case` statement.
 
 ```haskell
-deployConstructors :: (Name -> Q Exp) -> [Name] -> Q Exp
-deployConstructors effect conNames =
+-- |`spliceConstructors f conNames` takes a list of constructor names `conNames` and a function `f` applied to each
+-- constructor name. It splices them in a `\ case` expression. For the `Pet` example you would pass in something like:
+--
+-- @
+-- spliceConstructors (stringE . show) [''PetDog, ''PetCat, ''PetTeddyBear]
+-- @
+--
+-- and get something like:
+--
+-- @
+-- \ case
+--   PetDog -> "PetDog"
+--   PetCat -> "PetCat"
+--   PetTeddyBear -> "PetTeddyBear"
+-- @
+--
+-- Fill in the match statement given the function arguments.
+spliceConstructors :: (Name -> Q Exp) -> [Name] -> Q Exp
+spliceConstructors effect conNames =
   let happyPath = map $ \ conName ->
-        match (conP conName []) (normalB $ effect conName) []
+        match (conP conName []) (normalB $ effect conName) [] -- TODO fill this in
   in lamCaseE (happyPath conNames)
 
-deployValues :: (Name -> Q Exp) -> (Name -> Q Exp) -> Name -> [Name] -> Q Exp
-deployValues effect fallback tyName conNames = do
-  let happyPath = map $ \ conName -> do
+-- |`spliceValues f g tyName conNames` takes a list of constructor names `conNames` as well as a matching function `f`
+-- for the constructor names, a fallback `g` function for the catch-all case, and a type name `tyName`. It splices them
+-- in a `\ case` expression. For the `Pet` example you would pass in something like:
+--
+-- @
+-- spliceValues
+--   (\ c -> [| pure $(conE c) |])
+--   (\ other -> [| fail $ "Don't know what " <> show $(varE other) <> " is" |])
+--   ''Pet
+--   [''PetDog, ''PetCat, ''PetTeddyBear]
+-- @
+--
+-- and get something like:
+--
+-- @
+-- \ case
+--   "PetDog" -> pure PetDog
+--   "PetCat" -> pure PetCat
+--   "PetTeddyBear" -> pure PetTeddyBear
+--   other -> fail $ "Don't know what " <> other <> " is"
+-- @
+--
+-- Fill in the match statement given the function arguments.
+spliceValues :: (Name -> Q Exp) -> (Name -> Q Exp) -> Name -> [Name] -> Q Exp
+spliceValues effect fallback tyName conNames = do
+  let happyPath = map $ \ conName -> do -- TODO fill this in
         trimmed <- trimAndLowerTH tyName conName
         match (litP (stringL trimmed)) (normalB $ effect conName) []
       sadPath x = match (varP x) (normalB (fallback x)) []
   otherName <- newName "other"
   lamCaseE (happyPath conNames <> [sadPath otherName])
-```
-
-We can put it together:
-
-```haskell
-deriveEnumInstances :: Name -> Q [Dec]
-deriveEnumInstances tyName = do
-  conNames <- extractConstructors tyName
-  [d| instance ToJSON $(conT tyName) where
-        toJSON =
-          $(deployConstructors
-              (\ conName -> [| String $(stringE =<< trimAndLowerTH tyName conName) |])
-              conNames
-           )
-      instance FromJSON $(conT tyName) where
-        parseJSON = withText $(stringE (show tyName))
-          $(deployValues
-              (\ conName -> [| pure $(conE conName) |])
-              (\ other -> [| fail $ "unknown " <> $(stringE (show tyName)) <> " type " <> show $(varE other) |])
-              tyName conNames
-           )
-      instance PrettyShow $(conT tyName) where
-        prettyShow = $(deployConstructors (stringE <=< trimAndLowerTH tyName) conNames)
-    |]
-```
-
-We can look at what we did and see if it's reasonable.
-
-```bash
-stack ghci
-:set -ddump-splices
-import Language.Haskell.TH
-$(stringE . show =<< deriveEnumInstances ''Pet) :: String
 ```
