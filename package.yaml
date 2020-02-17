@@ -25,6 +25,5 @@ library:
     - src
   ghc-options:
     - -Wall
-    - -Werror
     - -fwarn-tabs
     - -pgmL markdown-unlit

@@ -11,4 +11,15 @@ stack install markdown-unlit
 
 ## Exercises
 
-Start in the `exercises/src` folder.
+The first two exercises are exploratory in GHCi to get a feel of how Template Haskell works. The next exercises go into
+more detail about how to define and test generated code.
+
+* [Exercise01](exercises/Exercise01.md) explores "hello world" in TH
+* [Exercise02](exercises/Exercise02.md) explores nuances in TH types
+* [Exercise03](exercises/Exercise03.md) helps create helper functions for inspection of a type's constructors at compile
+  time.
+* [Exercise04](exercises/Exercise04.md) uses the helper functions to generate instances for an enumeration.
+* [Exercise05](exercises/Exercise05.md) demonstrates how to invoke the instance generation function.
+* [Exercise06](exercises/Exercise06.md) demonstrates how to test the generated instances in Hspec.
+
+Start in the `exercises` folder and fill in the `TODO` parts of each exercise.

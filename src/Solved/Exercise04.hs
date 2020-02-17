@@ -1,20 +1,11 @@
-```haskell
-module Exercise04 where
+module Solved.Exercise04 where
 
 import ClassyPrelude
 import Data.Aeson (ToJSON, FromJSON, Value (String), parseJSON, toJSON, withText)
 import Language.Haskell.TH
 
-import Exercise03
-```
+import Solved.Exercise03
 
-# Exercise 04
-
-Recall our helper functions `trimAndLowerTH`, `extractConstructors`, `spliceConstructors`, `spliceValues`.
-
-We can put it all together:
-
-```haskell
 -- |`deriveEnumInstances tyName` takes a type name and derives three instances: `ToJSON`, `FromJSON`, `PrettyShow`. In
 -- order to derive those instances we need to extract the constructors and invoke the `spliceConstructors` or
 -- `spliceValues` function depending on what type of instance it is (showing or parsing, respectively). For the `Pet`
@@ -48,8 +39,7 @@ We can put it all together:
 -- Fill in the body given the function arguments.
 deriveEnumInstances :: Name -> Q [Dec]
 deriveEnumInstances tyName = do
-  conNames <- extractConstructors tyName -- TODO fill this in
-  -- TODO fill in this block
+  conNames <- extractConstructors tyName
   [d| instance ToJSON $(conT tyName) where
         toJSON =
           $(spliceConstructors
@@ -66,13 +56,3 @@ deriveEnumInstances tyName = do
       instance PrettyShow $(conT tyName) where
         prettyShow = $(spliceConstructors (stringE <=< trimAndLowerTH tyName) conNames)
     |]
-```
-
-We can look at what we did and see if it's reasonable.
-
-```bash
-stack ghci
-:set -ddump-splices
-import Language.Haskell.TH
-$(stringE . show =<< deriveEnumInstances ''Pet) :: String
-```

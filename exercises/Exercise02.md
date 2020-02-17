@@ -4,20 +4,22 @@ module Exercise02 where
 import ClassyPrelude
 import Language.Haskell.TH
 
-import Exercise01
+import Solved.Exercise01
 ```
 
 # Exercise 02
 
 All right, remember `helloWorldD` from before? Let's see if we can call it _now_.
 
+## Hello World Remix
+
 ```haskell
--- $(helloWorldE)
+-- $(helloWorldE) -- fails because this is `Exp`
 $(helloWorldD)
 ```
 
 ```bash
-stack ghci
+stack ghci exercises/Exercise02.lhs
 :type helloWorld
 helloWorld
 ```
@@ -39,15 +41,17 @@ helloWorldD' = do
     ]
 ```
 
+## Testing
+
 ```bash
-stack ghci
+stack ghci exercises/Exercise02.lhs
 runQ helloWorldD'
 $(stringE . show =<< helloWorldD') :: String
 ```
 
 And now we have a debugging utility.
 
-Other notes:
+## Other Notes
 
 * You can mix QuasiQuotes and splices together: `[| $(StringL "foo") :: String |]` and `$(sigE (StringL "foo") [t|
   String |])` are both valid.

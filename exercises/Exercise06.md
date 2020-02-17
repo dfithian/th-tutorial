@@ -1,5 +1,5 @@
 ```haskell
-module Exercise05 where
+module Exercise06 where
 
 import ClassyPrelude
 import Data.Aeson (decode, encode)
@@ -7,7 +7,7 @@ import Test.Hspec (Spec, describe, shouldBe, shouldSatisfy)
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck (Arbitrary, arbitrary, elements)
 
-import Exercise04
+import Solved.Exercise04
 ```
 
 # Exercise 06
@@ -37,21 +37,27 @@ deriveEnumInstances ''Fantastic
 
 instance Arbitrary Fantastic where
   arbitrary = elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
+```
 
+## Exercises
+
+### Write tests for the instances we derived
+
+```haskell
 -- |Fill in the spec bodies with the tests we want to run.
 thEnumSpec :: Spec
 thEnumSpec = describe "TH Enums" $ do
   prop "always round trips JSON instances" $ \ (x :: Fantastic) ->
-    decode (encode x) `shouldBe` Just x -- TODO fill this in
+    fail "TODO fill me in" :: IO ()
 
   prop "always encodes to something we expect" $ \ (x :: Fantastic) ->
-    encode x `shouldSatisfy` flip elem ["\"mrFox\"", "\"beasts\"", "\"fantasia\""] -- TODO fill this in
+    fail "TODO fill me in" :: IO ()
 ```
 
-Now to test.
+## Testing
 
 ```bash
-stack ghci
+stack ghci exercises/Exercise06.md
 import Test.Hspec
 hspec thEnumSpec
 ```

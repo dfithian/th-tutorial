@@ -29,6 +29,8 @@ helloWorldD =
 
 We have `Exp` expressions and `Dec` declarations. How are they different? What else can we define in Template Haskell?
 
+## Configuring GHCi
+
 Let's load this into GHCi:
 
 ```bash
@@ -37,11 +39,11 @@ cat > .ghci <<EOF
 :set prompt-cont "λ ‖ "
 :set -pgmL markdown-unlit
 EOF
+
+stack ghci exercises/Exercise01.lhs
 ```
 
-```bash
-stack ghci
-```
+## Exercises
 
 Quiz time! What do we think these all return?
 

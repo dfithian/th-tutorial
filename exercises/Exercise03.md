@@ -58,6 +58,10 @@ Where all this is leading should be pretty obvious: the point is that we want to
 enumerations. Eventually, we'll want a function `deriveEnumInstances :: Name -> Q [Dec]` that will generate these
 instances for us. On the way, we need to define a few helper functions.
 
+## Exercises
+
+### Trim and lowercasing first letter in a constructor
+
 First, we need a way of trimming a type and lowercasing the first letter in each constructor.
 
 ```haskell
@@ -73,6 +77,8 @@ trimAndLowerTH tyName conName =
       _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
 ```
 
+### Extracting constructors
+
 Next we need a way to extract constructors from a type in Template Haskell. Since we're in the `Q` monad, a call to
 `fail` makes compilation fail. To do this we'll need `reify`, which looks up and provides information about a type,
 value, class, you name it. What we're looking for in our case is a `data` type with N constructors, none of which take
@@ -85,13 +91,12 @@ extractConstructors :: Name -> Q [Name]
 extractConstructors tyName = do
   info <- reify tyName
   case info of
-    TyConI (DataD _cxt _name _tyVarBndrs_ _kindMay constructors _derivClauses) -> for constructors $ \ case -- TODO fill this in
-      NormalC conName [] -> pure conName -- TODO fill this in
-      other -> fail $ "type " <> show tyName <> " had a nontrivial constructor: " <> show other
-    other -> fail $ "type " <> show tyName <> " was not defined with `data`: " <> show other
+    _ -> fail "TODO fill me in"
 ```
 
-Then we need a way to iterate over the list of constructors and strings as the body of a `case` statement.
+### Iterating over constructors and values
+
+Then we need a way to iterate over the list of constructors and values as the body of a `case` statement.
 
 ```haskell
 -- |`spliceConstructors f conNames` takes a list of constructor names `conNames` and a function `f` applied to each
@@ -113,8 +118,7 @@ Then we need a way to iterate over the list of constructors and strings as the b
 -- Fill in the match statement given the function arguments.
 spliceConstructors :: (Name -> Q Exp) -> [Name] -> Q Exp
 spliceConstructors effect conNames =
-  let happyPath = map $ \ conName ->
-        match (conP conName []) (normalB $ effect conName) [] -- TODO fill this in
+  let happyPath = fail "TODO fill me in"
   in lamCaseE (happyPath conNames)
 
 -- |`spliceValues f g tyName conNames` takes a list of constructor names `conNames` as well as a matching function `f`
@@ -142,10 +146,14 @@ spliceConstructors effect conNames =
 -- Fill in the match statement given the function arguments.
 spliceValues :: (Name -> Q Exp) -> (Name -> Q Exp) -> Name -> [Name] -> Q Exp
 spliceValues effect fallback tyName conNames = do
-  let happyPath = map $ \ conName -> do -- TODO fill this in
-        trimmed <- trimAndLowerTH tyName conName
-        match (litP (stringL trimmed)) (normalB $ effect conName) []
+  let happyPath = fail "TODO fill me in"
       sadPath x = match (varP x) (normalB (fallback x)) []
   otherName <- newName "other"
   lamCaseE (happyPath conNames <> [sadPath otherName])
+```
+
+## Testing
+
+```bash
+stack ghci exercises/Exercise03.lhs
 ```
