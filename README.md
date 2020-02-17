@@ -6,7 +6,7 @@ inspiration.
 ## Setup
 
 [Markdown Unlit](https://hackage.haskell.org/package/markdown-unlit) is a GHC plugin for rendering Markdown as Literate
-Haskell.
+Haskell. Exercises in this workshop are written in Markdown, so we need to install the package.
 
 ```bash
 stack install markdown-unlit
