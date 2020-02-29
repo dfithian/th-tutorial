@@ -1,1 +1,0 @@
-Exercise06.md

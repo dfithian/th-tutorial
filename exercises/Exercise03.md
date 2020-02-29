@@ -1,159 +1,62 @@
 ```haskell
 module Exercise03 where
 
-import ClassyPrelude hiding (stripPrefix)
-import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
-import Data.List (stripPrefix)
+import ClassyPrelude
+import Data.Aeson (ToJSON, FromJSON, Value (String), parseJSON, toJSON, withText)
 import Language.Haskell.TH
+
+import Solved.Exercise02
 ```
 
-# Exercise 03
+# Exercise 04
 
-Now we have a background in Template Haskell, so what can we do with it? Say we have some boilerplate-y thing we often
-do and we want to generate that using a macro.
-
-```haskell
-data Pet
-  = PetDog
-  | PetCat
-  | PetTeddyBear
-  deriving (Eq, Show)
-```
-
-This is a pattern that I find very common: some enumeration, with constructors prefixed with the type name to avoid
-ambiguity (due to Haskell's namespacing woes). Inevitably someone will want JSON instances.
-
-```haskell
-instance ToJSON Pet where
-  toJSON = \ case
-    PetDog -> String "dog"
-    PetCat -> String "cat"
-    PetTeddyBear -> String "teddyBear"
-instance FromJSON Pet where
-  parseJSON = withText "Pet" $ \ case
-    "dog" -> pure PetDog
-    "cat" -> pure PetCat
-    "teddyBear" -> pure PetTeddyBear
-    other -> fail $ "unknown pet type " <> unpack other
-```
-
-Maybe on top of that you also generate similar instances for `PersistField` or some prettier `Show`.
-
-```haskell
-class PrettyShow a where
-  prettyShow :: a -> Text
-
-instance PrettyShow Pet where
-  prettyShow = \ case
-    PetDog -> "dog"
-    PetCat -> "cat"
-    PetTeddyBear -> "teddyBear"
-```
-
-Pretty soon you have a bunch of enumerations and every time you have to write out five or six different instances, and
-any time you refactor a function common to them all you have to go change the code in the exact same way in now every
-single one of those instances. Terrible.
-
-Where all this is leading should be pretty obvious: the point is that we want to generate some boilerplate instances for
-enumerations. Eventually, we'll want a function `deriveEnumInstances :: Name -> Q [Dec]` that will generate these
-instances for us. On the way, we need to define a few helper functions.
+Recall our helper functions `trimAndLowerTH`, `extractConstructors`, `spliceConstructors`, `spliceValues`. We can
+combine them to generate instances for `FromJSON`, `ToJSON`, and `PrettyShow`.
 
 ## Exercises
 
-### Trim and lowercasing first letter in a constructor
-
-First, we need a way of trimming a type and lowercasing the first letter in each constructor.
+### Derive enum instances for the `Pet` type
 
 ```haskell
--- |Trim and lower a string by removing its prefix.
-trimAndLowerTH :: Name -> Name -> Q String
-trimAndLowerTH tyName conName =
-  let tyStr = show tyName
-      conStr = show conName
-  in case stripPrefix tyStr conStr of
-    Nothing -> fail $ tyStr <> " not a prefix of " <> conStr
-    Just suffix -> case suffix of
-      c:cs -> pure $ (charToLower c):cs
-      _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
-```
-
-### Extracting constructors
-
-Next we need a way to extract constructors from a type in Template Haskell. Since we're in the `Q` monad, a call to
-`fail` makes compilation fail. To do this we'll need `reify`, which looks up and provides information about a type,
-value, class, you name it. What we're looking for in our case is a `data` type with N constructors, none of which take
-any extra arguments.
-
-```haskell
--- |Extract the constructors.
--- Fill in the pattern match statement.
-extractConstructors :: Name -> Q [Name]
-extractConstructors tyName = do
-  info <- reify tyName
-  case info of
-    _ -> fail "TODO fill me in"
-```
-
-### Iterating over constructors and values
-
-Then we need a way to iterate over the list of constructors and values as the body of a `case` statement.
-
-```haskell
--- |`spliceConstructors f conNames` takes a list of constructor names `conNames` and a function `f` applied to each
--- constructor name. It splices them in a `\ case` expression. For the `Pet` example you would pass in something like:
+-- |`deriveEnumInstances tyName` takes a type name and derives three instances: `ToJSON`, `FromJSON`, `PrettyShow`. In
+-- order to derive those instances we need to extract the constructors and invoke the `spliceConstructors` or
+-- `spliceValues` function depending on what type of instance it is (showing or parsing, respectively). For the `Pet`
+-- example you would pass in something like:
 --
 -- @
--- spliceConstructors (stringE . show) [''PetDog, ''PetCat, ''PetTeddyBear]
+-- putStrLn $(stringE . pprint =<< deriveEnumInstances ''Pet)
 -- @
 --
 -- and get something like:
 --
 -- @
--- \ case
---   PetDog -> "PetDog"
---   PetCat -> "PetCat"
---   PetTeddyBear -> "PetTeddyBear"
+-- Instance ToJSON Pet where
+--   toJSON = \ case
+--     PetDog -> String "dog"
+--     PetCat -> String "cat"
+--     PetTeddyBear -> String "teddyBear"
+-- Instance FromJSON Pet where
+--   parseJSON = withText "Pet" $ \ case
+--     "dog" -> pure PetDog
+--     "cat" -> pure PetCat
+--     "teddyBear" -> pure PetTeddyBear
+--     other -> fail $ "I don't know about " <> other
+-- Instance PrettyShow Pet where
+--   prettyShow = \ case
+--     PetDog -> "dog"
+--     PetCat -> "cat"
+--     PetTeddyBear -> "teddyBear"
 -- @
 --
--- Fill in the match statement given the function arguments.
-spliceConstructors :: (Name -> Q Exp) -> [Name] -> Q Exp
-spliceConstructors effect conNames =
-  let happyPath = fail "TODO fill me in"
-  in lamCaseE (happyPath conNames)
-
--- |`spliceValues f g tyName conNames` takes a list of constructor names `conNames` as well as a matching function `f`
--- for the constructor names, a fallback `g` function for the catch-all case, and a type name `tyName`. It splices them
--- in a `\ case` expression. For the `Pet` example you would pass in something like:
---
--- @
--- spliceValues
---   (\ c -> [| pure $(conE c) |])
---   (\ other -> [| fail $ "Don't know what " <> show $(varE other) <> " is" |])
---   ''Pet
---   [''PetDog, ''PetCat, ''PetTeddyBear]
--- @
---
--- and get something like:
---
--- @
--- \ case
---   "PetDog" -> pure PetDog
---   "PetCat" -> pure PetCat
---   "PetTeddyBear" -> pure PetTeddyBear
---   other -> fail $ "Don't know what " <> other <> " is"
--- @
---
--- Fill in the match statement given the function arguments.
-spliceValues :: (Name -> Q Exp) -> (Name -> Q Exp) -> Name -> [Name] -> Q Exp
-spliceValues effect fallback tyName conNames = do
-  let happyPath = fail "TODO fill me in"
-      sadPath x = match (varP x) (normalB (fallback x)) []
-  otherName <- newName "other"
-  lamCaseE (happyPath conNames <> [sadPath otherName])
-```
-
-## Testing
-
-```bash
-stack ghci exercises/Exercise03.lhs
+-- Fill in the body given the function arguments.
+deriveEnumInstances :: Name -> Q [Dec]
+deriveEnumInstances tyName = do
+  conNames <- fail "TODO fill me in"
+  [d| instance ToJSON $(conT tyName) where
+        toJSON = error "TODO fill me in"
+      instance FromJSON $(conT tyName) where
+        parseJSON = error "TODO fill me in"
+      instance PrettyShow $(conT tyName) where
+        prettyShow = error "TODO fill me in"
+            |]
 ```

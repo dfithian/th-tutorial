@@ -1,66 +1,161 @@
 ```haskell
 module Exercise02 where
 
-import ClassyPrelude
+import ClassyPrelude hiding (stripPrefix)
+import Data.Aeson (FromJSON, ToJSON, Value (String), parseJSON, toJSON, withText)
+import Data.List (stripPrefix)
 import Language.Haskell.TH
-
-import Solved.Exercise01
 ```
 
-# Exercise 02
+# Exercise 03
 
-All right, remember `helloWorldD` from before? Let's see if we can call it _now_.
-
-## Hello World Remix
+Now we have a background in Template Haskell, so what can we do with it? Say we have some boilerplate-y thing we often
+do and we want to generate that using a macro.
 
 ```haskell
--- $(helloWorldE) -- fails because this is `Exp`
-$(helloWorldD)
+data Pet
+  = PetDog
+  | PetCat
+  | PetTeddyBear
+  deriving (Eq, Show)
 ```
 
-```bash
-stack ghci exercises/Exercise02.lhs
-:type helloWorld
-helloWorld
-```
-
-So we have expressions and declarations, and they are invoked at different times.
-
-So far we have only used QuasiQuotes, which is a way to "lift" regular Haskell expressions into Template Haskell. We can
-also invoke Template Haskell directly. Let's try:
+This is a pattern that I find very common: some enumeration, with constructors prefixed with the type name to avoid
+ambiguity (due to Haskell's namespacing woes). Inevitably someone will want JSON instances.
 
 ```haskell
-helloWorldD' :: Q [Dec]
-helloWorldD' = do
-  helloWorldName <- newName "helloWorld"
-  Just ioName <- lookupTypeName "IO"
-  Just putStrLnName <- lookupValueName "putStrLn"
-  sequence $
-    [ sigD helloWorldName (appT (conT ioName) (tupleT 0))
-    , valD (varP helloWorldName) (normalB (appE (varE putStrLnName) (litE (stringL "i'm too far gone!!")))) []
-    ]
+instance ToJSON Pet where
+  toJSON = \ case
+    PetDog -> String "dog"
+    PetCat -> String "cat"
+    PetTeddyBear -> String "teddyBear"
+instance FromJSON Pet where
+  parseJSON = withText "Pet" $ \ case
+    "dog" -> pure PetDog
+    "cat" -> pure PetCat
+    "teddyBear" -> pure PetTeddyBear
+    other -> fail $ "unknown pet type " <> unpack other
 ```
 
-## Testing
+Maybe on top of that you also generate similar instances for `PersistField` or some prettier `Show`.
 
-```bash
-stack ghci exercises/Exercise02.lhs
-runQ helloWorldD'
-$(stringE . show =<< helloWorldD') :: String
+```haskell
+class PrettyShow a where
+  prettyShow :: a -> Text
+
+instance PrettyShow Pet where
+  prettyShow = \ case
+    PetDog -> "dog"
+    PetCat -> "cat"
+    PetTeddyBear -> "teddyBear"
 ```
 
-And now we have a debugging utility.
+Pretty soon you have a bunch of enumerations and every time you have to write out five or six different instances, and
+any time you refactor a function common to them all you have to go change the code in the exact same way in now every
+single one of those instances. Terrible.
 
-## Other Notes
+Where all this is leading should be pretty obvious: the point is that we want to generate some boilerplate instances for
+enumerations. Eventually, we'll want a function `deriveEnumInstances :: Name -> Q [Dec]` that will generate these
+instances for us. On the way, we need to define a few helper functions.
 
-* You can mix QuasiQuotes and splices together: `[| $(StringL "foo") :: String |]` and `$(sigE (StringL "foo") [t|
-  String |])` are both valid.
-* Lowercase TH functions and uppercase TH constructors are related.
-    * `varP :: Name -> PatQ`
-    * `type PatQ = Q Pat`
-    * `data Pat = ... | VarP Name | ...`
-* Constructors and functions always end with the first letter of their type.
-    * `varE :: Name -> ExpQ`
-    * `varT :: Name -> TypeQ`
-    * `varP :: Name -> PatQ`
+## Exercises
 
+### Trim and lowercasing first letter in a constructor
+
+First, we need a way of trimming a type and lowercasing the first letter in each constructor. This function is provided
+for you.
+
+```haskell
+-- |Trim and lower a string by removing its prefix.
+trimAndLowerTH :: Name -> Name -> Q String
+trimAndLowerTH tyName conName =
+  let tyStr = show tyName
+      conStr = show conName
+  in case stripPrefix tyStr conStr of
+    Nothing -> fail $ tyStr <> " not a prefix of " <> conStr
+    Just suffix -> case suffix of
+      c:cs -> pure $ (charToLower c):cs
+      _ -> fail $ tyStr <> " not a proper prefix of " <> conStr
+```
+
+### Extracting constructors
+
+Next we need a way to extract constructors from a type in Template Haskell. Since we're in the `Q` monad, a call to
+`fail` makes compilation fail. To do this we'll need `reify`, which looks up and provides information about a type,
+value, class, you name it. What we're looking for in our case is a `data` type with N constructors, none of which take
+any extra arguments.
+
+```haskell
+-- |Extract the constructors.
+-- Fill in the pattern match statement. Pass in something like:
+--
+-- @
+-- putStrLn $(stringE . show =<< extractConstructors ''Pet)
+-- @
+--
+-- and get something like:
+--
+-- @
+-- [Exercise03.PetDog, Exercise03.PetCat, Exercise03.PetTeddyBear]
+-- @
+extractConstructors :: Name -> Q [Name]
+extractConstructors tyName = do
+  info <- reify tyName
+  case info of
+    _ -> fail "TODO fill me in"
+```
+
+### Iterating over constructors and values
+
+Then we need a way to iterate over the list of constructors and values as the body of a `case` statement. Note that here
+we should look up `lamCaseE` to figure out the appropriate shape for `happyPath`.
+
+```haskell
+-- |`spliceConstructors f conNames` takes a list of constructor names `conNames` and a function `f` applied to each
+-- constructor name. It splices them in a `\ case` expression. For the `Pet` example you would pass in something like:
+--
+-- @
+-- putStrLn $(stringE . pprint =<< spliceConstructors (stringE <=< trimAndLowerTH ''Pet) ['PetDog, 'PetCat, 'PetTeddyBear])
+-- @
+--
+-- and get something like:
+--
+-- @
+-- \ case
+--   Exercise03.PetDog -> "dog"
+--   Exercise03.PetCat -> "cat"
+--   Exercise03.PetTeddyBear -> "teddyBear"
+-- @
+--
+-- Fill in the match statement given the function arguments.
+spliceConstructors :: (Name -> Q Exp) -> [Name] -> Q Exp
+spliceConstructors effect conNames =
+  let happyPath = fail "TODO fill this in"
+  in lamCaseE (happyPath conNames)
+
+-- |`spliceValues f g tyName conNames` takes a list of constructor names `conNames` as well as a matching function `f`
+-- for the constructor names, a fallback `g` function for the catch-all case, and a type name `tyName`. It splices them
+-- in a `\ case` expression. For the `Pet` example you would pass in something like:
+--
+-- @
+-- putStrLn $(stringE . pprint =<< spliceValues (litP . StringL <=< trimAndLowerTH ''Pet) ['PetDog, 'PetCat, 'PetTeddyBear])
+-- @
+--
+-- and get something like:
+--
+-- @
+-- \ case
+--   "dog" -> pure PetDog
+--   "cat" -> pure PetCat
+--   "teddyBear" -> pure PetTeddyBear
+--   other -> fail $ "Don't know what " <> other <> " is"
+-- @
+--
+-- Fill in the match statement given the function arguments.
+spliceValues :: (Name -> Q Pat) -> [Name] -> Q Exp
+spliceValues effect conNames = do
+  let happyPath = fail "TODO fill me in"
+      sadPath x = match (varP x) (normalB [| fail $ "Don't know what " <> show $(varE x) <> " is" |]) []
+  otherName <- newName "other"
+  lamCaseE (happyPath conNames <> [sadPath otherName])
+```

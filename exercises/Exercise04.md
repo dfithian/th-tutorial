@@ -2,72 +2,62 @@
 module Exercise04 where
 
 import ClassyPrelude
-import Data.Aeson (ToJSON, FromJSON, Value (String), parseJSON, toJSON, withText)
-import Language.Haskell.TH
+import Data.Aeson (decode, encode)
+import Test.Hspec (Spec, describe, hspec, shouldBe, shouldSatisfy)
+import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (Arbitrary, arbitrary, elements)
 
 import Solved.Exercise03
 ```
 
-# Exercise 04
+# Exercise 06
 
-Recall our helper functions `trimAndLowerTH`, `extractConstructors`, `spliceConstructors`, `spliceValues`. We can
-combine them to generate instances for `FromJSON`, `ToJSON`, and `PrettyShow`.
+It worked! Now, let's write some tests so that we can do this once and we never have to think about it ever again, even
+when we refactor. We create a new enumeration, generate the instances, and test the instances. That way we're testing
+that (1) the template haskell even compiles, because that would be terrible if it didn't, and (2) that the generated
+code does what we want whenever we generate the way we expect.
+
+```haskell
+data Fantastic
+  = FantasticMrFox
+  | FantasticBeasts
+  | FantasticFantasia
+  deriving (Eq, Show)
+
+data Incorrect
+  = Correct
+  deriving (Eq, Show)
+
+deriveEnumInstances ''Fantastic
+
+-- Should fail because the prefix is wrong. Can't figure out a way to run a macro down in `Q [Dec]` because `runQ` on
+-- something that `fail`s will always fail before you can catch it. In any rate, you could also test this by putting
+-- it in a separate project or file, compiling it independently, and grepping for compilation errors.
+-- deriveEnumInstances ''Incorrect
+
+instance Arbitrary Fantastic where
+  arbitrary = elements [FantasticMrFox, FantasticBeasts, FantasticFantasia]
+```
 
 ## Exercises
 
-### Derive enum instances for the `Pet` type
+### Write tests for the instances we derived
 
 ```haskell
--- |`deriveEnumInstances tyName` takes a type name and derives three instances: `ToJSON`, `FromJSON`, `PrettyShow`. In
--- order to derive those instances we need to extract the constructors and invoke the `spliceConstructors` or
--- `spliceValues` function depending on what type of instance it is (showing or parsing, respectively). For the `Pet`
--- example you would pass in something like:
---
--- @
--- deriveEnumInstances ''Pet
--- @
---
--- and get something like:
---
--- @
--- Instance ToJSON Pet where
---   toJSON = \ case
---     PetDog -> String "dog"
---     PetCat -> String "cat"
---     PetTeddyBear -> String "teddyBear"
--- Instance FromJSON Pet where
---   parseJSON = withText "Pet" $ \ case
---     "dog" -> pure PetDog
---     "cat" -> pure PetCat
---     "teddyBear" -> pure PetTeddyBear
---     other -> fail $ "I don't know about " <> other
--- Instance PrettyShow Pet where
---   prettyShow = \ case
---     PetDog -> "dog"
---     PetCat -> "cat"
---     PetTeddyBear -> "teddyBear"
--- @
---
--- Fill in the body given the function arguments.
-deriveEnumInstances :: Name -> Q [Dec]
-deriveEnumInstances tyName = do
-  conNames <- fail "TODO fill me in"
-  [d| instance ToJSON $(conT tyName) where
-        toJSON = error "TODO fill me in"
-      instance FromJSON $(conT tyName) where
-        parseJSON = error "TODO fill me in"
-      instance PrettyShow $(conT tyName) where
-        prettyShow = error "TODO fill me in"
-    |]
+-- |Fill in the spec bodies with the tests we want to run.
+thEnumSpec :: Spec
+thEnumSpec = describe "TH Enums" $ do
+  prop "always round trips JSON instances" $ \ (x :: Fantastic) ->
+    fail "TODO fill me in" :: IO ()
+
+  prop "always encodes to something we expect" $ \ (x :: Fantastic) ->
+    fail "TODO fill me in" :: IO ()
 ```
 
 ## Testing
 
-We can look at what we did and see if it's reasonable.
-
 ```bash
-stack ghci exercises/Exercise04.lhs
-:set -ddump-splices
-import Language.Haskell.TH
-$(stringE . show =<< deriveEnumInstances ''Pet) :: String
+stack ghci
+:l exercises/Exercise06.md
+hspec thEnumSpec
 ```

@@ -18,6 +18,9 @@ The `src` folder contains "solved" functions which will be necessary for complet
 stack build --fast # compile the solved functions
 ```
 
+Also recommend keeping a tab open to the docs for Template Haskell:
+https://www.stackage.org/lts-14.22/package/template-haskell-2.14.0.0
+
 ## Exercises
 
 The first two exercises are exploratory in GHCi to get a feel of how Template Haskell works. The next exercises go into
