@@ -1,3 +1,4 @@
+.ghci
 .stack-work
 stack.yaml.lock
 *.cabal
