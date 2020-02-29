@@ -10,10 +10,10 @@ import Test.QuickCheck (Arbitrary, arbitrary, elements)
 import Solved.Exercise03
 ```
 
-It worked! Now, let's write some tests so that we can do this once and we never have to think about it ever again, even
-when we refactor. We create a new enumeration, generate the instances, and test the instances. That way we're testing
-that (1) the template haskell even compiles, because that would be terrible if it didn't, and (2) that the generated
-code does what we want whenever we generate the way we expect.
+Now, let's write some tests so that we can do this once and we never have to think about it ever again, even when we
+refactor. We create a new enumeration, generate the instances, and test the instances. That way we're testing that (1)
+the template haskell even compiles, because that would be terrible if it didn't, and (2) that the generated code does
+what we want whenever we generate the way we expect.
 
 ```haskell
 data Fantastic

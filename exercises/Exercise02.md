@@ -84,7 +84,7 @@ value, class, you name it. What we're looking for in our case is a `data` type w
 any extra arguments.
 
 ```haskell
--- |Extract the constructors.
+-- |Extract the constructors for a type.
 -- Fill in the pattern match statement. Pass in something like:
 --
 -- @
@@ -94,7 +94,7 @@ any extra arguments.
 -- and get something like:
 --
 -- @
--- [Exercise03.PetDog, Exercise03.PetCat, Exercise03.PetTeddyBear]
+-- [PetDog, PetCat, PetTeddyBear]
 -- @
 extractConstructors :: Name -> Q [Name]
 extractConstructors tyName = do
