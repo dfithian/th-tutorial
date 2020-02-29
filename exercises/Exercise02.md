@@ -7,8 +7,6 @@ import Data.List (stripPrefix)
 import Language.Haskell.TH
 ```
 
-# Exercise 03
-
 Now we have a background in Template Haskell, so what can we do with it? Say we have some boilerplate-y thing we often
 do and we want to generate that using a macro.
 
@@ -62,8 +60,8 @@ instances for us. On the way, we need to define a few helper functions.
 
 ### Trim and lowercasing first letter in a constructor
 
-First, we need a way of trimming a type and lowercasing the first letter in each constructor. This function is provided
-for you.
+We need a way of trimming a type and lowercasing the first letter in each constructor. This function is provided for you
+so you can use it in later exercises.
 
 ```haskell
 -- |Trim and lower a string by removing its prefix.
@@ -122,9 +120,9 @@ we should look up `lamCaseE` to figure out the appropriate shape for `happyPath`
 --
 -- @
 -- \ case
---   Exercise03.PetDog -> "dog"
---   Exercise03.PetCat -> "cat"
---   Exercise03.PetTeddyBear -> "teddyBear"
+--   PetDog -> "dog"
+--   PetCat -> "cat"
+--   PetTeddyBear -> "teddyBear"
 -- @
 --
 -- Fill in the match statement given the function arguments.

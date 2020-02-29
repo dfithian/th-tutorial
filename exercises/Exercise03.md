@@ -8,8 +8,6 @@ import Language.Haskell.TH
 import Solved.Exercise02
 ```
 
-# Exercise 04
-
 Recall our helper functions `trimAndLowerTH`, `extractConstructors`, `spliceConstructors`, `spliceValues`. We can
 combine them to generate instances for `FromJSON`, `ToJSON`, and `PrettyShow`.
 
@@ -58,5 +56,5 @@ deriveEnumInstances tyName = do
         parseJSON = error "TODO fill me in"
       instance PrettyShow $(conT tyName) where
         prettyShow = error "TODO fill me in"
-            |]
+    |]
 ```

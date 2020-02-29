@@ -65,8 +65,8 @@ In general, TH splices are called with `$(<splice>)`.
 
 We can't invoke all TH splices in GHCi. We can run `$(helloWorldE)` but we can't run `$(helloWorldD)`. In order to use
 the declarations provided by `$(helloWorldD)` we'd have to put it in a file and reload the module. In addition, the
-splice has to be declared in a separate file from the one in which it is invoked. That's left as an exercise to the
-user.
+splice has to be declared in a separate file from the one in which it is invoked. Try it out for yourself, if you'd
+like.
 
 ### Debugging expressions in GHCi
 
