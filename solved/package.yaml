@@ -1,0 +1,29 @@
+name: th-workshop-solved
+version: '0.1'
+maintainer: Dan Fithian
+license: AllRightsReserved
+copyright: 2020 Dan Fithian
+default-extensions:
+  - LambdaCase
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - QuasiQuotes
+  - ScopedTypeVariables
+  - TemplateHaskell
+
+dependencies:
+  - aeson
+  - base
+  - classy-prelude
+  - hspec
+  - QuickCheck
+  - template-haskell
+  - text
+
+library:
+  source-dirs:
+    - src
+  ghc-options:
+    - -Wall
+    - -fwarn-tabs
+    - -pgmL markdown-unlit

@@ -5,7 +5,7 @@ import ClassyPrelude
 import Data.Aeson (ToJSON, FromJSON, Value (String), parseJSON, toJSON, withText)
 import Language.Haskell.TH
 
-import Solved.Exercise02
+import Exercise02
 ```
 
 Recall our helper functions `trimAndLowerTH`, `extractConstructors`, `spliceConstructors`, `spliceValues`. We can
@@ -28,6 +28,11 @@ combine them to generate instances for `FromJSON`, `ToJSON`, and `PrettyShow`.
 -- and get something like:
 --
 -- @
+-- Instance PrettyShow Pet where
+--   prettyShow = \ case
+--     PetDog -> "dog"
+--     PetCat -> "cat"
+--     PetTeddyBear -> "teddyBear"
 -- Instance ToJSON Pet where
 --   toJSON = \ case
 --     PetDog -> String "dog"
@@ -39,22 +44,17 @@ combine them to generate instances for `FromJSON`, `ToJSON`, and `PrettyShow`.
 --     "cat" -> pure PetCat
 --     "teddyBear" -> pure PetTeddyBear
 --     other -> fail $ "I don't know about " <> other
--- Instance PrettyShow Pet where
---   prettyShow = \ case
---     PetDog -> "dog"
---     PetCat -> "cat"
---     PetTeddyBear -> "teddyBear"
 -- @
 --
 -- Fill in the body given the function arguments.
 deriveEnumInstances :: Name -> Q [Dec]
 deriveEnumInstances tyName = do
   conNames <- fail "TODO fill me in"
-  [d| instance ToJSON $(conT tyName) where
+  [d| instance PrettyShow $(conT tyName) where
+        prettyShow = error "TODO fill me in"
+      instance ToJSON $(conT tyName) where
         toJSON = error "TODO fill me in"
       instance FromJSON $(conT tyName) where
         parseJSON = error "TODO fill me in"
-      instance PrettyShow $(conT tyName) where
-        prettyShow = error "TODO fill me in"
     |]
 ```

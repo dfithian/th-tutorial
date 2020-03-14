@@ -21,7 +21,7 @@ data Pet
 This is a pattern that I find very common: some enumeration, with constructors prefixed with the type name to avoid
 ambiguity (due to Haskell's namespacing woes). Inevitably someone will want JSON instances.
 
-```haskell
+```
 instance ToJSON Pet where
   toJSON = \ case
     PetDog -> String "dog"
@@ -40,7 +40,9 @@ Maybe on top of that you also generate similar instances for `PersistField` or s
 ```haskell
 class PrettyShow a where
   prettyShow :: a -> Text
+```
 
+```
 instance PrettyShow Pet where
   prettyShow = \ case
     PetDog -> "dog"
@@ -65,6 +67,17 @@ so you can use it in later exercises.
 
 ```haskell
 -- |Trim and lower a string by removing its prefix.
+-- Pass in something like:
+--
+-- @
+-- putStrLn $(stringE =<< trimAndLowerTH ''Pet 'PetDog)
+-- @
+--
+-- and get something like
+--
+-- @
+-- dog
+-- @
 trimAndLowerTH :: Name -> Name -> Q String
 trimAndLowerTH tyName conName =
   let tyStr = show tyName
@@ -132,8 +145,8 @@ spliceConstructors effect conNames =
   in lamCaseE (happyPath conNames)
 
 -- |`spliceValues f g tyName conNames` takes a list of constructor names `conNames` as well as a matching function `f`
--- for the constructor names, a fallback `g` function for the catch-all case, and a type name `tyName`. It splices them
--- in a `\ case` expression. For the `Pet` example you would pass in something like:
+-- for the constructor names, and a type name `tyName`. It splices them in a `\ case` expression. For the `Pet` example
+-- you would pass in something like:
 --
 -- @
 -- putStrLn $(stringE . pprint =<< spliceValues (litP . StringL <=< trimAndLowerTH ''Pet) ['PetDog, 'PetCat, 'PetTeddyBear])

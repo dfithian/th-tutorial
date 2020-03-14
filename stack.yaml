@@ -1,5 +1,6 @@
 resolver: lts-14.22
 packages:
   - .
+  - solved
 extra-deps: []
 flags: {}
