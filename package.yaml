@@ -1,8 +1,8 @@
-name: th-workshop
+name: th-tutorial
 version: '0.1'
 maintainer: Dan Fithian
 license: AllRightsReserved
-copyright: 2020 Dan Fithian
+copyright: 2021 Dan Fithian
 default-extensions:
   - LambdaCase
   - NoImplicitPrelude

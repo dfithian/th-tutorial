@@ -1,12 +1,12 @@
-# Template Haskell Workshop
+# Template Haskell Tutorial
 
-This is the repository for a Template Haskell workshop. See [the proposal](doc/proposal.md) for the original
+This is the repository for a Template Haskell tutorial. See [the proposal](doc/proposal.md) for the original
 inspiration.
 
 ## Setup
 
 [Markdown Unlit](https://hackage.haskell.org/package/markdown-unlit) is a GHC plugin for rendering Markdown as Literate
-Haskell. Exercises in this workshop are written in Markdown, so we need to install the package.
+Haskell. Exercises in this tutorial are written in Markdown, so we need to install the package.
 
 ```bash
 stack install markdown-unlit
@@ -15,7 +15,7 @@ stack install markdown-unlit
 We will always test a module by loading it into GHCi:
 
 ```bash
-stack ghci th-workshop
+stack ghci th-tutorial
 ```
 
 Also recommend keeping a tab open to the docs for Template Haskell:
