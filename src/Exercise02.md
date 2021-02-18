@@ -21,7 +21,7 @@ data Pet
 This is a pattern that I find very common: some enumeration, with constructors prefixed with the type name to avoid
 ambiguity (due to Haskell's namespacing woes). Inevitably someone will want JSON instances.
 
-```
+```haskell
 instance ToJSON Pet where
   toJSON = \ case
     PetDog -> String "dog"
@@ -42,7 +42,7 @@ class PrettyShow a where
   prettyShow :: a -> Text
 ```
 
-```
+```haskell
 instance PrettyShow Pet where
   prettyShow = \ case
     PetDog -> "dog"
